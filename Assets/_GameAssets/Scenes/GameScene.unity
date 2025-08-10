@@ -1736,7 +1736,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _orientationTransform: {fileID: 1898105547}
-  _playerSpeed: 10
+  _playerSpeed: 30
+  _jumpKey: 32
+  _jumpForce: 5
 --- !u!1 &2028598121
 GameObject:
   m_ObjectHideFlags: 0
