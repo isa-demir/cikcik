@@ -13,6 +13,8 @@ public class NewMonoBehaviourScript : MonoBehaviour
     [SerializeField] private KeyCode _jumpKey;
     [SerializeField] private float _jumpForce;
     [SerializeField] private bool _canJump;
+    [SerializeField] private float _airMultiplier;
+    [SerializeField] private float _airDrag;
     [SerializeField] private float _jumpCooldown;
 
     [Header("Sliding Settings")]
@@ -26,6 +28,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     [SerializeField] private float _playerHeight;
     [SerializeField] private float _groundDrag;
 
+    private StateController _stateController;
     private Rigidbody _playerRigidBody;
     private float _horizontalInput, _verticalInput;
     private Vector3 _movementDirection;
@@ -34,12 +37,14 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
     private void Awake()
     {
+        _stateController = GetComponent<StateController>();
         _playerRigidBody = GetComponent<Rigidbody>();
         _playerRigidBody.freezeRotation = true;
     }
     private void Update()
     {
         SetInputs();
+        SetStates();
         SetPlayerDrag();
         LimitPlayerSpeed();
     }
@@ -69,32 +74,52 @@ public class NewMonoBehaviourScript : MonoBehaviour
             Invoke(nameof(ResetJumping), _jumpCooldown);
         }
     }
+    private void SetStates()
+    {
+        var movementDirection = GetMovementDirection;
+        var isGrounded = IsGrounded();
+        var currentState = _stateController.GetCurrentState;
+
+        var newState = currentState switch
+        {
+            _ when movementDirection == Vector3.zero && isGrounded && !_isSliding => PlayerState.Idle,
+            _ when movementDirection != Vector3.zero && isGrounded && !_isSliding => PlayerState.Move,
+            _ when movementDirection != Vector3.zero && isGrounded && _isSliding => PlayerState.Slide,
+            _ when movementDirection == Vector3.zero && isGrounded && _isSliding => PlayerState.SlideIdle,
+            _ when !_canJump && !isGrounded => PlayerState.Jump,
+            _ => currentState
+        };
+
+        if (newState != currentState)
+        {
+            _stateController.ChangeState(newState);
+        }
+    }
 
     private void SetPlayerMovement()
     {
         // _verticalInput: İleri (+1) veya geri (-1) gitmek için klavyeden gelen değer.
         //_horizontalInput: Sağa(+1) veya sola(-1) gitmek için klavyeden gelen değer.
         _movementDirection = _orientationTransform.forward * _verticalInput + _orientationTransform.right * _horizontalInput;
-        if (_isSliding)
-        {
-            _playerRigidBody.AddForce(_movementDirection.normalized * _playerSpeed * _movementMultiplier, ForceMode.Force);
 
-        }
-        else
+        float forceMultiplier = _stateController.GetCurrentState switch
         {
-            _playerRigidBody.AddForce(_movementDirection.normalized * _playerSpeed, ForceMode.Force);
-        }
+            PlayerState.Move => 1f,
+            PlayerState.Slide => _movementMultiplier,
+            PlayerState.Jump => _airMultiplier,
+            _ => 1
+        };
+        _playerRigidBody.AddForce(_movementDirection.normalized * _playerSpeed * forceMultiplier, ForceMode.Force);
     }
     private void SetPlayerDrag()
     {
-        if (_isSliding)
+        _playerRigidBody.linearDamping = _stateController.GetCurrentState switch
         {
-            _playerRigidBody.linearDamping = _slideDrag;
-        }
-        else
-        {
-            _playerRigidBody.linearDamping = _groundDrag;
-        }
+            PlayerState.Move => _groundDrag,
+            PlayerState.Slide => _slideDrag,
+            PlayerState.Jump => _airDrag,
+            _ => _playerRigidBody.linearDamping,
+        };
     }
     private void LimitPlayerSpeed()
     {
@@ -139,4 +164,6 @@ public class NewMonoBehaviourScript : MonoBehaviour
         */
         return Physics.Raycast(transform.position, Vector3.down, _playerHeight * 0.5f + _raycastDistance, _groundLayer);
     }
+
+    private Vector3 GetMovementDirection => _movementDirection.normalized;
 }
