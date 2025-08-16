@@ -54,11 +54,11 @@ public class NewMonoBehaviourScript : MonoBehaviour
         _horizontalInput = Input.GetAxisRaw("Horizontal");
         _verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKeyDown(_movementKey))
+        if (Input.GetKeyDown(_slideKey))
         {
             _isSliding = true;
         }
-        else if (Input.GetKeyUp(_slideKey))
+        else if (Input.GetKeyUp(_movementKey))
         {
             _isSliding = false;
         }

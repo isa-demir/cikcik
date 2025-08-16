@@ -1744,10 +1744,12 @@ MonoBehaviour:
   _jumpCooldown: 0.5
   _slideKey: 113
   _movementMultiplier: 1.5
+  _slideDrag: 0
   _groundLayer:
     serializedVersion: 2
     m_Bits: 64
   _playerHeight: 1
+  _groundDrag: 0
 --- !u!1 &2028598121
 GameObject:
   m_ObjectHideFlags: 0
